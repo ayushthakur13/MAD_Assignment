@@ -1,6 +1,7 @@
 package com.example.myapplication;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ArrayAdapter;
@@ -10,8 +11,8 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatDelegate;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -24,7 +25,6 @@ public class MainActivity extends AppCompatActivity {
     private TextView resultText;
     private final String[] units = {"Feet", "Inches", "Centimeters", "Meters", "Yards"};
 
-    // Conversion factors relative to meters
     private final Map<String, Double> conversionFactors = new HashMap<String, Double>() {{
         put("Feet", 0.3048);
         put("Inches", 0.0254);
@@ -35,8 +35,10 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        // Load theme before setting content
+        loadTheme();
+
         super.onCreate(savedInstanceState);
-        EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
 
         inputValue = findViewById(R.id.inputValue);
@@ -44,25 +46,17 @@ public class MainActivity extends AppCompatActivity {
         toUnitSpinner = findViewById(R.id.toUnitSpinner);
         convertButton = findViewById(R.id.convertButton);
         resultText = findViewById(R.id.resultText);
-        settingsButton = findViewById(R.id.settingsButton); // Added Settings button
+        settingsButton = findViewById(R.id.settingsButton);
 
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, units);
         fromUnitSpinner.setAdapter(adapter);
         toUnitSpinner.setAdapter(adapter);
 
-        convertButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                performConversion();
-            }
-        });
+        convertButton.setOnClickListener(v -> performConversion());
 
-        settingsButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent(MainActivity.this, SettingsActivity.class);
-                startActivity(intent);
-            }
+        settingsButton.setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, SettingsActivity.class);
+            startActivity(intent);
         });
     }
 
@@ -77,14 +71,19 @@ public class MainActivity extends AppCompatActivity {
         }
 
         double input = Double.parseDouble(inputStr);
-
-        // Convert input value to meters first
         double valueInMeters = input * conversionFactors.get(fromUnit);
-
-        // Convert from meters to the target unit
         double result = valueInMeters / conversionFactors.get(toUnit);
 
-        // Display result
         resultText.setText(String.format("Result: %.4f %s", result, toUnit));
+    }
+
+    private void loadTheme() {
+        SharedPreferences prefs = getSharedPreferences("AppPrefs", MODE_PRIVATE);
+        boolean isDarkMode = prefs.getBoolean("isDarkMode", false);
+        if (isDarkMode) {
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
+        } else {
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
+        }
     }
 }
